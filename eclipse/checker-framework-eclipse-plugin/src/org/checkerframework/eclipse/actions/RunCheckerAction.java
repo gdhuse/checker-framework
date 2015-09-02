@@ -2,15 +2,23 @@ package org.checkerframework.eclipse.actions;
 
 import java.util.List;
 
-import org.checkerframework.eclipse.util.PluginUtil;
-import org.eclipse.core.commands.ExecutionEvent;
-import org.eclipse.core.runtime.jobs.Job;
-import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jface.viewers.ISelection;
-
 import org.checkerframework.eclipse.CheckerPlugin;
 import org.checkerframework.eclipse.prefs.CheckerPreferences;
 import org.checkerframework.eclipse.util.MutexSchedulingRule;
+import org.checkerframework.eclipse.util.PluginUtil;
+import org.eclipse.core.commands.ExecutionEvent;
+import org.eclipse.core.resources.IFile;
+import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IFileEditorInput;
+import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.IWorkbenchWindow;
+import org.eclipse.ui.PlatformUI;
 
 /**
  *
@@ -66,8 +74,35 @@ public abstract class RunCheckerAction extends CheckerHandler
      */
     public Object execute(ExecutionEvent event)
     {
+        // See if a file or project is selected in the explorer
         ISelection selection = getSelection(event);
         List<IJavaElement> elements = selectionToJavaElements(selection);
+
+        // Otherwise, try to get the file being actively edited
+        if(elements.isEmpty()) {
+        	IWorkbench workbench = PlatformUI.getWorkbench();
+        	if(workbench != null) {
+        		IWorkbenchWindow window = workbench.getActiveWorkbenchWindow();
+        		if(window != null) {
+        			IWorkbenchPage page = window.getActivePage();
+        			if(page != null) {
+        				IEditorPart editorPart = page.getActiveEditor();
+        				if(editorPart != null) {
+        					IEditorInput input = editorPart.getEditorInput();
+        					if(input != null && input instanceof IFileEditorInput) {
+        						IFile file = ((IFileEditorInput)input).getFile();
+        						if(file != null) {
+        							IJavaElement javaElement = JavaCore.create(file);
+        							if(javaElement != null) {
+        								elements.add(javaElement);
+        							}
+        						}        						
+        					}
+        				}
+        			}
+        		}
+        	}
+        }
 
         if (!elements.isEmpty())
         {
