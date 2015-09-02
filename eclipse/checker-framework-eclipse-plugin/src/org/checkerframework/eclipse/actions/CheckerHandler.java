@@ -1,17 +1,17 @@
 package org.checkerframework.eclipse.actions;
 
-import org.checkerframework.checker.nullness.qual.Nullable;
-import org.eclipse.core.commands.AbstractHandler;
-import org.eclipse.core.commands.ExecutionEvent;
-import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jdt.core.IJavaProject;
-import org.eclipse.jface.viewers.ISelection;
-import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eclipse.jface.viewers.ITreeSelection;
-import org.eclipse.ui.handlers.HandlerUtil;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.eclipse.core.commands.AbstractHandler;
+import org.eclipse.core.commands.ExecutionEvent;
+import org.eclipse.core.resources.IProject;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jface.viewers.ISelection;
+import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.ui.handlers.HandlerUtil;
 
 public abstract class CheckerHandler extends AbstractHandler {
 
@@ -45,11 +45,14 @@ public abstract class CheckerHandler extends AbstractHandler {
 
         IJavaProject project = null;
         for(final Object element : elements) {
-            if(element instanceof IJavaProject) {
+            if(element instanceof IProject) {
+            	IJavaProject javaProject = (element instanceof IJavaProject) ? 
+            			(IJavaProject)element : JavaCore.create((IProject)element);
+            	
                 //If the project is in the selection return only it
-                if(project == null || element.equals(project)) {
+                if(javaProject != null && (project == null || element.equals(project))) {
                     javaElements.clear();
-                    javaElements.add((IJavaProject) element);
+                    javaElements.add(javaProject);
                     break;
                 }
 
