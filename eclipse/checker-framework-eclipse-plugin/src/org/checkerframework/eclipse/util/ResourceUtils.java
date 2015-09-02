@@ -270,7 +270,7 @@ public class ResourceUtils {
                 throw new RuntimeException(exc);
             }
         } else {
-            return out.toOSString();
+        	return ResourcesPlugin.getWorkspace().getRoot().findMember(out).getLocation().toOSString();
         }
 
         // location is null if the classpath entry outputs to the 'default'
