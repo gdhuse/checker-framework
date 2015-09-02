@@ -3,9 +3,18 @@ package org.checkerframework.eclipse.actions;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 
-import org.checkerframework.eclipse.util.*;
+import org.checkerframework.eclipse.CheckerPlugin;
+import org.checkerframework.eclipse.javac.CheckersRunner;
+import org.checkerframework.eclipse.javac.CommandlineJavacRunner;
+import org.checkerframework.eclipse.javac.JavacError;
+import org.checkerframework.eclipse.javac.JavacRunner;
+import org.checkerframework.eclipse.util.MarkerUtil;
+import org.checkerframework.eclipse.util.Paths;
+import org.checkerframework.eclipse.util.PluginUtil;
+import org.checkerframework.eclipse.util.ResourceUtils;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
@@ -19,12 +28,6 @@ import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
-
-import org.checkerframework.eclipse.CheckerPlugin;
-import org.checkerframework.eclipse.javac.CheckersRunner;
-import org.checkerframework.eclipse.javac.CommandlineJavacRunner;
-import org.checkerframework.eclipse.javac.JavacError;
-import org.checkerframework.eclipse.javac.JavacRunner;
 
 import com.sun.tools.javac.util.Pair;
 
@@ -228,16 +231,15 @@ public class CheckerWorker extends Job {
 	private Pair<List<String>, List<String>> classPathEntries(
 			IJavaProject project) throws JavaModelException {
 
-		final Pair<List<String>, List<String>> results = new Pair<List<String>, List<String>>(
-				new ArrayList<String>(), new ArrayList<String>());
-
+		LinkedHashSet<String> fst = new LinkedHashSet<String>();
+		LinkedHashSet<String> snd = new LinkedHashSet<String>();
 		for (IClasspathEntry cp : project.getResolvedClasspath(true)) {
 			Pair<List<String>, List<String>> paths = pathOf(cp, project);
-			results.fst.addAll(paths.fst);
-			results.snd.addAll(paths.snd);
+			fst.addAll(paths.fst);
+			snd.addAll(paths.snd);
 		}
 
-		return results;
+		return new Pair<List<String>, List<String>>(new ArrayList<String>(fst), new ArrayList<String>(snd));
 	}
 
 	private Pair<List<String>, List<String>> projectPathOf(IClasspathEntry entry)
