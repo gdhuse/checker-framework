@@ -52,7 +52,8 @@ public class CheckerWorker extends Job {
 	 */
 	public CheckerWorker(IJavaProject project, String[] sourceFiles,
 			String checkerNames, boolean hasQuals) {
-		super("Running checker on " + sourceFiles.toString());
+		super("Running checker on " 
+			+ ((sourceFiles.length < 10) ? sourceFiles.toString() : sourceFiles.length + " files"));
 		this.project = project;
 		this.sourceFiles = sourceFiles;
 		this.checkerNames = checkerNames;
@@ -61,7 +62,8 @@ public class CheckerWorker extends Job {
 	}
 
 	public CheckerWorker(List<IJavaElement> elements, String checkerNames, boolean hasQuals) {
-		super("Running checker on " + PluginUtil.join(",", elements));
+		super("Running checker on " 
+				+ ((elements.size() < 10) ? PluginUtil.join(",", elements) : elements.size() + " items"));
 		this.project = elements.get(0).getJavaProject();
 		this.checkerNames = checkerNames;
 		this.useJavacRunner = shouldUseJavacRunner();
