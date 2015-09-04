@@ -1,31 +1,32 @@
 package org.checkerframework.eclipse.actions;
 
-import org.eclipse.core.commands.ExecutionEvent;
-import org.eclipse.core.commands.ExecutionException;
-import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IProjectDescription;
-import org.eclipse.core.runtime.CoreException;
-import org.eclipse.jdt.core.IJavaElement;
-import org.eclipse.jface.viewers.ISelection;
+import java.util.List;
 
 import org.checkerframework.eclipse.CheckerPlugin;
+import org.eclipse.core.commands.ExecutionEvent;
+import org.eclipse.core.commands.ExecutionException;
+import org.eclipse.core.resources.IProjectDescription;
+import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jface.viewers.ISelection;
 
 public class DisableNatureHandler extends ProjectNatureHandler
 {
     public Object execute(ExecutionEvent event) throws ExecutionException
     {
         ISelection selection = getSelection(event);
-        IJavaElement element = element(selection);
+        List<IJavaProject> projects = selectionToJavaProjects(selection);
 
         try
         {
-            IProject project = element.getJavaProject().getProject();
-            IProjectDescription desc = project.getDescription();
-            String[] natures = desc.getNatureIds();
-            boolean hasNature = hasNature(natures);
-
-            if (hasNature)
-                removeNature(project, desc, natures);
+        	for(IJavaProject project : projects) {
+	            IProjectDescription desc = project.getProject().getDescription();
+	            String[] natures = desc.getNatureIds();
+	            boolean hasNature = hasNature(natures);
+	
+	            if (hasNature)
+	                removeNature(project.getProject(), desc, natures);
+        	}
 
         }catch (CoreException e)
         {

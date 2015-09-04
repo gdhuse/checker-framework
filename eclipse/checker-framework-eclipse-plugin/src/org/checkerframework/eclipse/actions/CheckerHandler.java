@@ -1,6 +1,7 @@
 package org.checkerframework.eclipse.actions;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import org.eclipse.core.commands.AbstractHandler;
@@ -17,6 +18,29 @@ public abstract class CheckerHandler extends AbstractHandler {
 
     protected IJavaElement element(final ISelection selection) {
         throw new UnsupportedOperationException("This is only used by unused code at the moment!");
+    }
+    
+    protected List<IJavaProject> selectionToJavaProjects(final ISelection selection)
+    {
+    	final LinkedHashSet<IJavaProject> projects = new LinkedHashSet<IJavaProject>();
+    	if(selection instanceof IStructuredSelection) {
+    		for(final Object element : ((IStructuredSelection)selection).toList()) {
+    			if(element instanceof IJavaProject) {
+    				projects.add((IJavaProject)element);
+    				
+    			} else if(element instanceof IProject) {
+    				IJavaProject javaProject = JavaCore.create((IProject)element);
+    				if(javaProject != null) {
+    					projects.add(javaProject);
+    				}
+    				
+    			} else if(element instanceof IJavaElement) {
+	                projects.add(((IJavaElement)element).getJavaProject());
+    			}
+    		}
+    	}
+    	
+    	return new ArrayList<IJavaProject>(projects);
     }
 
     /**

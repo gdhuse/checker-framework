@@ -13,7 +13,7 @@ import org.checkerframework.eclipse.builder.CheckerBuilder;
 
 public class CheckerBuildNature implements IProjectNature
 {
-    public static final String NATURE_ID = "checkers.eclipse.buildnature";
+    public static final String NATURE_ID = "checker.framework.eclipse.plugin.buildnature";
     private IProject project;
 
     @Override

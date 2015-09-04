@@ -25,7 +25,7 @@ import org.checkerframework.eclipse.util.ResourceUtils;
 
 public class CheckerBuilder extends IncrementalProjectBuilder
 {
-    public static final String BUILDER_ID = "checkers.eclipse.checkerbuilder";
+    public static final String BUILDER_ID = "checker.framework.eclipse.plugin.builder";
 
     public CheckerBuilder()
     {

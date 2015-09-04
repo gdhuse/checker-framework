@@ -59,7 +59,7 @@ public class CheckerPreferencePage extends PreferencePage implements
     private Button optVerbose;
 
     private Text optJDKPath;
-    //private Button optAutoBuild;
+    private Button optAutoBuild;
     private Button optWarning;
     private Button optFilenames;
     private Button optNoMsgText;
@@ -93,8 +93,8 @@ public class CheckerPreferencePage extends PreferencePage implements
         uiLayout.marginWidth = uiLayout.marginHeight = 5;
         uiGroup.setLayout(uiLayout);
 
-        //optAutoBuild = new Button(uiGroup, SWT.CHECK);
-        //optAutoBuild.setText("Automatically run type-checkers");
+        optAutoBuild = new Button(uiGroup, SWT.CHECK);
+        optAutoBuild.setText("Run configured checkers on build (Enabled projects only)");
 
         final Label filterLabel = new Label(uiGroup, SWT.None);
         filterLabel.setText("Regex for warning/error filter:");
@@ -390,7 +390,7 @@ public class CheckerPreferencePage extends PreferencePage implements
 
             private void setRemoveState() {
                 final TableItem [] selectedItems = optTable.getSelection();
-                removeButton.setEnabled(selectedItems != null || selectedItems.length != 0);
+                removeButton.setEnabled(selectedItems != null && selectedItems.length != 0);
             }
         });
     }
@@ -472,8 +472,8 @@ public class CheckerPreferencePage extends PreferencePage implements
             }
         }
 
-        /*optAutoBuild.setSelection(store
-                .getBoolean(CheckerPreferences.PREF_CHECKER_AUTO_BUILD)); */
+        optAutoBuild.setSelection(store
+                .getBoolean(CheckerPreferences.PREF_CHECKER_AUTO_BUILD));
         optSkipUses.setText(store
                 .getString(CheckerPreferences.PREF_CHECKER_A_SKIP_CLASSES));
         optALint.setText(store
@@ -515,8 +515,8 @@ public class CheckerPreferencePage extends PreferencePage implements
         CheckerManager.storeCustomClasses(customClasses);
 
         store.setValue(CheckerPreferences.PREF_CHECKER_PREFS_SET, true);
-        /*store.setValue(CheckerPreferences.PREF_CHECKER_AUTO_BUILD,
-                optAutoBuild.getSelection()); */
+        store.setValue(CheckerPreferences.PREF_CHECKER_AUTO_BUILD,
+                optAutoBuild.getSelection());
         store.setValue(CheckerPreferences.PREF_CHECKER_A_SKIP_CLASSES,
                 optSkipUses.getText());
         store.setValue(CheckerPreferences.PREF_CHECKER_A_LINT,

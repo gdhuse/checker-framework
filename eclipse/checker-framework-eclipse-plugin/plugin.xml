@@ -13,29 +13,28 @@
     <initializer class="org.checkerframework.eclipse.prefs.PreferenceInitializer" />
   </extension>
 
-<!--
   <extension
-    id="buildnature"
+    id="checker.framework.eclipse.plugin.buildnature"
    	name="%extension.name"
    	point="org.eclipse.core.resources.natures">
    	<runtime>
-      <run class="checkers.eclipse.natures.CheckerBuildNature"/>
+      <run class="org.checkerframework.eclipse.natures.CheckerBuildNature"/>
     </runtime>
-    <builder id="checkers.eclipse.checkerbuilder"/>
+    <builder id="checker.framework.eclipse.plugin.builder"/>
     <requires-nature id="org.eclipse.jdt.core.javanature"/>
   </extension>
 
   <extension
-    id="checkerbuilder"
+    id="checker.framework.eclipse.plugin.builder"
     name="%extension.name.0"
     point="org.eclipse.core.resources.builders">
     <builder hasNature="true">
-      <run class="checkers.eclipse.builder.CheckerBuilder">
+      <run class="org.checkerframework.eclipse.builder.CheckerBuilder">
         <parameter name="optimize" value="true"/>
         <parameter name="comment" value="CheckerBuilder"/>
       </run>
     </builder>
-  </extension>-->
+  </extension>-
 
   <extension
     id="checker.framework.eclipse.plugin.marker"
@@ -72,7 +71,7 @@
           style="push">
         </command>
 
-        <!--<command
+        <command
           commandId="checkers.eclipse.enablenature"
           label="Enable Automatic Checking"
           style="push">
@@ -81,7 +80,7 @@
           commandId="checkers.eclipse.disablenature"
           label="Disable Automatic Checking"
           style="push">
-        </command> -->
+        </command>
         <!--<command
           commandId="checkers.eclipse.addcheckers"
           label="Add checkers-quals.jar to project"
@@ -203,16 +202,16 @@
         </dynamic>
         <visibleWhen checkEnabled="false">
           <with variable="activeMenuSelection">
-          	<!--<or>-->
+          	<or>
 	            <iterate>
 	              <adapt type="org.eclipse.jdt.internal.core.JavaElement">
 	              </adapt>
 	            </iterate>
-	            <!--<iterate>
+	            <iterate>
 	              <adapt type="org.eclipse.core.resources.IProject">
-	              </adapt> TODO: IS THIS OK TRY CHECKING WHOLE PROJECT
-	            </iterate>-->
-            <!--</or>-->
+	              </adapt>
+	            </iterate>
+            </or>
           </with>
         </visibleWhen>
       </menu>
@@ -342,18 +341,18 @@
       id="checkers.eclipse.clearmarkers"
       name="Clear Project Markers">
     </command>
-    <!--<command
-      categoryId="checkers.eclipse.category"
-      defaultHandler="checkers.eclipse.actions.EnableNatureHandler"
-      id="checkers.eclipse.enablenature"
-      name="Enable Automatic Checking">
-    </command>  TODO: CAN I COMMENT OUT THE BUILDER?
     <command
       categoryId="checkers.eclipse.category"
-      defaultHandler="checkers.eclipse.actions.DisableNatureHandler"
+      defaultHandler="org.checkerframework.eclipse.actions.EnableNatureHandler"
+      id="checkers.eclipse.enablenature"
+      name="Enable Automatic Checking">
+    </command>
+    <command
+      categoryId="checkers.eclipse.category"
+      defaultHandler="org.checkerframework.eclipse.actions.DisableNatureHandler"
       id="checkers.eclipse.disablenature"
       name="Disable Automatic Checking">
-    </command>-->
+    </command>
     <command
       categoryId="checkers.eclipse.category"
       defaultHandler="org.checkerframework.eclipse.actions.CheckerActions$CurrentAction"
