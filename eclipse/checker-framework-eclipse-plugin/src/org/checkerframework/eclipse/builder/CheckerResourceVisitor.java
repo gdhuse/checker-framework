@@ -1,22 +1,22 @@
 package org.checkerframework.eclipse.builder;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Set;
 
+import org.checkerframework.eclipse.util.Util;
 import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.runtime.CoreException;
-
-import org.checkerframework.eclipse.util.Util;
+import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.JavaCore;
 
 public class CheckerResourceVisitor implements IResourceDeltaVisitor
 {
-    HashSet<String> buildFiles;
+    private HashSet<IJavaElement> buildFiles;
 
     CheckerResourceVisitor()
     {
-        buildFiles = new HashSet<String>();
+        buildFiles = new HashSet<IJavaElement>();
     }
 
     @Override
@@ -30,17 +30,17 @@ public class CheckerResourceVisitor implements IResourceDeltaVisitor
         }
         else if (Util.isJavaFile(delta.getResource()))
         {
-            buildFiles.add(delta.getResource().getLocation().toOSString());
+        	IJavaElement javaElement = JavaCore.create(delta.getResource());
+        	if(javaElement != null) {
+        		buildFiles.add(javaElement);
+        	}
         }
 
         return true;
     }
 
-    public List<String> getBuildFiles()
+    public Set<IJavaElement> getBuildFiles()
     {
-        List<String> resultList = new ArrayList<String>();
-        resultList.addAll(buildFiles);
-
-        return resultList;
+    	return buildFiles;
     }
 }

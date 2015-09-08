@@ -3,8 +3,14 @@ package org.checkerframework.eclipse.actions;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.checkerframework.eclipse.CheckerPlugin;
 import org.checkerframework.eclipse.javac.CheckersRunner;
@@ -16,7 +22,6 @@ import org.checkerframework.eclipse.util.Paths;
 import org.checkerframework.eclipse.util.PluginUtil;
 import org.checkerframework.eclipse.util.ResourceUtils;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -33,45 +38,39 @@ import com.sun.tools.javac.util.Pair;
 
 //TODO: RENAME THIS TO CHECKER JOB
 public class CheckerWorker extends Job {
-	private final IJavaProject project;
 	private final String checkerNames;
-	private String[] sourceFiles;
+
+	private Set<IJavaElement> javaElements;
+	private Map<String, IJavaElement> sourceFiles;
 
 	private final String javacJreVersion = "1.8.0";
 
 	private final boolean useJavacRunner;
-    private final boolean hasQuals;
+	private final boolean hasQuals;
 
-	/**
-	 * This constructor is intended for use from an incremental builder that has
-	 * a list of updated source files to check
-	 *
-	 * @param project
-	 * @param sourceFiles
-	 * @param checkerNames
-	 */
-	public CheckerWorker(IJavaProject project, String[] sourceFiles,
-			String checkerNames, boolean hasQuals) {
-		super("Running checker on " 
-			+ ((sourceFiles.length < 10) ? sourceFiles.toString() : sourceFiles.length + " files"));
-		this.project = project;
-		this.sourceFiles = sourceFiles;
-		this.checkerNames = checkerNames;
-		this.useJavacRunner = shouldUseJavacRunner();
-        this.hasQuals = hasQuals;
-	}
-
-	public CheckerWorker(List<IJavaElement> elements, String checkerNames, boolean hasQuals) {
-		super("Running checker on " 
-				+ ((elements.size() < 10) ? PluginUtil.join(",", elements) : elements.size() + " items"));
-		this.project = elements.get(0).getJavaProject();
+	public CheckerWorker(Set<IJavaElement> elements, String checkerNames,
+			boolean hasQuals) {
+		super("Running checker on "
+				+ ((elements.size() < 10) ? PluginUtil.join(",", elements)
+						: elements.size() + " items"));
 		this.checkerNames = checkerNames;
 		this.useJavacRunner = shouldUseJavacRunner();
 
-        this.hasQuals = hasQuals;
+		this.javaElements = new HashSet<IJavaElement>();
+		this.sourceFiles = new HashMap<String, IJavaElement>();
+
+		this.hasQuals = hasQuals;
 		try {
-			this.sourceFiles = ResourceUtils.sourceFilesOf(elements).toArray(
-					new String[] {});
+			for (IJavaElement givenElement : elements) {
+				this.javaElements.addAll(ResourceUtils
+						.javaElementsOf(givenElement));
+			}
+
+			for (IJavaElement javaElement : javaElements) {
+				this.sourceFiles.put(javaElement.getResource().getLocation()
+						.toOSString(), javaElement);
+			}
+
 		} catch (CoreException e) {
 			CheckerPlugin.logException(e, e.getMessage());
 		}
@@ -114,7 +113,9 @@ public class CheckerWorker extends Job {
 		}
 
 		pm.setTaskName("Removing old markers");
-		MarkerUtil.removeMarkers(project.getResource());
+		for (IJavaElement javaElement : javaElements) {
+			MarkerUtil.removeMarkers(javaElement.getResource());
+		}
 		pm.worked(1);
 
 		pm.setTaskName("Running checker");
@@ -122,46 +123,43 @@ public class CheckerWorker extends Job {
 		pm.worked(6);
 
 		pm.setTaskName("Updating problem list");
-		markErrors(project, callJavac);
+		markErrors(callJavac);
 		pm.worked(3);
 
 		pm.done();
 	}
 
 	private List<JavacError> runChecker() throws JavaModelException {
-		final Pair<String, String> classpaths = classPathOf(project);
+		final Pair<String, String> classpaths = classPathOf(projectsFor(javaElements));
 
 		final CheckersRunner runner;
 		if (useJavacRunner) {
-			runner = new JavacRunner(sourceFiles, checkerNames.split(","),
-					classpaths.fst + File.pathSeparator + classpaths.snd, hasQuals);
+			runner = new JavacRunner(sourceFiles.keySet().toArray(
+					new String[] {}), checkerNames.split(","), classpaths.fst
+					+ File.pathSeparator + classpaths.snd, hasQuals);
 		} else {
-			runner = new CommandlineJavacRunner(sourceFiles, checkerNames.split(","),
-					classpaths.fst, classpaths.snd, hasQuals);
+			runner = new CommandlineJavacRunner(sourceFiles.keySet().toArray(
+					new String[] {}), checkerNames.split(","), classpaths.fst,
+					classpaths.snd, hasQuals);
 		}
 		runner.run();
 
 		return runner.getErrors();
 	}
 
-	/**
-	 * Mark errors for this project in the appropriate files
-	 *
-	 * @param project
-	 */
-
-	private void markErrors(IJavaProject project, List<JavacError> errors) {
+	private void markErrors(List<JavacError> errors) {
 		for (JavacError error : errors) {
 			if (error.file == null) {
 				continue;
 			}
 
-			IResource file = ResourceUtils.getFile(project, error.file);
-			if (file == null)
+			IJavaElement javaElement = sourceFiles.get(error.file.toString());
+			if (javaElement == null)
 				continue;
-			MarkerUtil.addMarker(error.message, project.getProject(), file,
-					error.lineNumber, error.errorKey, error.errorArguments,
-					error.startPosition, error.endPosition);
+			MarkerUtil.addMarker(error.message, javaElement.getJavaProject()
+					.getProject(), javaElement.getResource(), error.lineNumber,
+					error.errorKey, error.errorArguments, error.startPosition,
+					error.endPosition);
 		}
 	}
 
@@ -222,32 +220,44 @@ public class CheckerWorker extends Job {
 	 * @return the project's classpath as a string
 	 * @throws JavaModelException
 	 */
-	private Pair<String, String> classPathOf(IJavaProject project)
+	private Pair<String, String> classPathOf(Collection<IJavaProject> projects)
 			throws JavaModelException {
-		Pair<List<String>, List<String>> paths = classPathEntries(project);
+		Pair<List<String>, List<String>> paths = classPathEntries(projects);
 
 		return new Pair<String, String>(PluginUtil.join(File.pathSeparator,
 				paths.fst), PluginUtil.join(File.pathSeparator, paths.snd));
 	}
 
 	private Pair<List<String>, List<String>> classPathEntries(
-			IJavaProject project) throws JavaModelException {
+			Collection<IJavaProject> projects) throws JavaModelException {
 
 		LinkedHashSet<String> fst = new LinkedHashSet<String>();
 		LinkedHashSet<String> snd = new LinkedHashSet<String>();
-		for (IClasspathEntry cp : project.getResolvedClasspath(true)) {
-			Pair<List<String>, List<String>> paths = pathOf(cp, project);
-			fst.addAll(paths.fst);
-			snd.addAll(paths.snd);
+
+		for (IJavaProject project : projects) {
+			for (IClasspathEntry cp : project.getResolvedClasspath(true)) {
+				Pair<List<String>, List<String>> paths = pathOf(cp, project);
+				fst.addAll(paths.fst);
+				snd.addAll(paths.snd);
+			}
 		}
 
-		return new Pair<List<String>, List<String>>(new ArrayList<String>(fst), new ArrayList<String>(snd));
+		return new Pair<List<String>, List<String>>(new ArrayList<String>(fst),
+				new ArrayList<String>(snd));
 	}
 
 	private Pair<List<String>, List<String>> projectPathOf(IClasspathEntry entry)
 			throws JavaModelException {
 		final IProject project = ResourceUtils.workspaceRoot().getProject(
 				entry.getPath().toOSString());
-		return classPathEntries(JavaCore.create(project));
+		return classPathEntries(Collections.singleton(JavaCore.create(project)));
+	}
+
+	private Set<IJavaProject> projectsFor(Collection<IJavaElement> javaElements) {
+		Set<IJavaProject> projects = new HashSet<IJavaProject>();
+		for (IJavaElement javaElement : javaElements) {
+			projects.add(javaElement.getJavaProject());
+		}
+		return projects;
 	}
 }

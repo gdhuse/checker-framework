@@ -1,6 +1,8 @@
 package org.checkerframework.eclipse.actions;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.checkerframework.eclipse.CheckerPlugin;
 import org.checkerframework.eclipse.prefs.CheckerPreferences;
@@ -76,7 +78,7 @@ public abstract class RunCheckerAction extends CheckerHandler
     {
         // See if a file or project is selected in the explorer
         ISelection selection = getSelection(event);
-        List<IJavaElement> elements = selectionToJavaElements(selection);
+        Set<IJavaElement> elements = new LinkedHashSet<IJavaElement>(selectionToJavaElements(selection));
 
         // Otherwise, try to get the file being actively edited
         if(elements.isEmpty()) {
